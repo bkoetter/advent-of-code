@@ -1,6 +1,3 @@
-use std::fs::File;
-use std::io::{self, Read};
-
 fn get_first_and_last_number(string: &str) -> u32 {
     format!(
         "{}{}",
@@ -9,10 +6,8 @@ fn get_first_and_last_number(string: &str) -> u32 {
     ).parse::<u32>().unwrap_or(0)
 }
 
-fn main() -> io::Result<()> {
-    let mut content = String::new();
-    File::open("input.txt")?.read_to_string(&mut content)?;
-    println!("{}", content.lines().map(get_first_and_last_number).sum::<u32>());
+fn main() -> std::io::Result<()> {
+    println!("{}", std::fs::read_to_string("input.txt")?.lines().map(get_first_and_last_number).sum::<u32>());
     Ok(())
 }
 
