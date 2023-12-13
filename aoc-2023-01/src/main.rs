@@ -8,8 +8,10 @@ fn get_first_and_last_number(word: &str) -> u32 {
             numbers.push(c.to_digit(10).unwrap());
             continue;
         }
-        ENGLISH_NUMBERS.iter().enumerate().filter(|(_, &number)| word[i..].starts_with(number))
-            .for_each(|(n, _)| numbers.push(n as u32 + 1));
+
+        if let Some((n, _)) = ENGLISH_NUMBERS.iter().enumerate().find(|(_, &number)| word[i..].starts_with(number)) {
+            numbers.push(n as u32 + 1);
+        }
     }
     format!("{}{}", numbers.first().unwrap_or(&0), numbers.last().unwrap_or(&0)).parse::<u32>().unwrap_or(0)
 }
