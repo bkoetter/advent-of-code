@@ -1,19 +1,15 @@
 const ENGLISH_NUMBERS: [&str; 9] = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
 
 fn get_first_and_last_number(word: &str) -> u32 {
-    let mut numbers = Vec::new();
-
-    for (i, c) in word.chars().enumerate() {
-        if c.is_ascii_digit() {
-            numbers.push(c.to_digit(10).unwrap());
-            continue;
+    let numbers: Vec<char> = word.chars().enumerate().filter_map(|(i, c)| {
+        match c {
+            '0'..='9' => Some(c),
+            _ => ENGLISH_NUMBERS.iter().enumerate().find(|(_, &n)| word[i..].starts_with(n))
+                .map(|(i, _)| (i + 1).to_string().chars().last().unwrap_or('0'),)
         }
+    }).collect();
 
-        if let Some((n, _)) = ENGLISH_NUMBERS.iter().enumerate().find(|(_, &number)| word[i..].starts_with(number)) {
-            numbers.push(n as u32 + 1);
-        }
-    }
-    format!("{}{}", numbers.first().unwrap_or(&0), numbers.last().unwrap_or(&0)).parse::<u32>().unwrap_or(0)
+    format!("{}{}", numbers.first().unwrap_or(&'0'), numbers.last().unwrap_or(&'0')).parse::<u32>().unwrap_or(0)
 }
 
 fn main() -> std::io::Result<()> {
