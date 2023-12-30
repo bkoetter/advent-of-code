@@ -49,10 +49,9 @@ fn main() -> std::io::Result<()> {
     println!("{:?}", std::fs::read_to_string("input.txt")?
         .lines().filter_map(parse_game)
         .map(|game| (
-            if game.draw.red <= MAX.red && game.draw.blue <= MAX.blue && game.draw.green <= MAX.green {
-                game.id
-            } else {
-                0
+            match game.draw.red <= MAX.red && game.draw.blue <= MAX.blue && game.draw.green <= MAX.green {
+                true => game.id,
+                false => 0,
             },
             game.draw.red * game.draw.blue * game.draw.green,
         ))
