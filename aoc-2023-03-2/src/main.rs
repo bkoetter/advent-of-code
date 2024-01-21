@@ -13,7 +13,7 @@ fn main() -> std::io::Result<()> {
             _ => None,
         }).collect::<Vec<usize>>()
     )
-    .filter(|v| v.len() > 0)
+    .filter(|v| !v.is_empty())
         .for_each(|line| {
         println!("{:?}", line);
     });
