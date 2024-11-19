@@ -1,0 +1,9 @@
+[workspace]
+resolver = "2"
+members = ["aoc-2015-01-1", "aoc-2015-01-2"]
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"
