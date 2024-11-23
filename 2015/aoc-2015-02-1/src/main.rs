@@ -1,18 +1,18 @@
 use std::io::BufRead;
 
-fn calc_size(input: &[u8]) -> u64 {
-    _ = input
+fn calc_size(input: &[u8]) -> u16 {
+    input
         .lines()
         .map(|s| s.unwrap().splitn(3,'x')
-            .map(|n| n.parse::<u8>().unwrap())
-            .collect::<Vec<u8>>()
-        ).for_each(|s| println!("{:?}", s));
-    5
+            .map(|n| n.parse::<u16>().unwrap())
+            .collect::<Vec<u16>>()
+        )
+        .map(|array| array.iter().min().unwrap() + array.iter().sum::<u16>())
+        .sum()
 }
 
 fn main() {
-    calc_size(include_bytes!("../input.txt"));
-    println!("Hello, world!");
+    println!("{}", calc_size(include_bytes!("../input.txt")));
 }
 
 #[cfg(test)]
