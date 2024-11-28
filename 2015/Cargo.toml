@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["aoc-2015-01-1", "aoc-2015-01-2", "aoc-2015-02-1"]
+members = ["aoc-2015-01-1", "aoc-2015-01-2", "aoc-2015-02-1", "aoc-2015-02-2"]
 
 [profile.release]
 strip = true
