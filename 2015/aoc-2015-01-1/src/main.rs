@@ -1,15 +1,16 @@
-use std::{fs, io};
-
 fn calc_floor(input: &[u8]) -> i64 {
-    input.iter().fold(0, |acc, b| match b {
-        40 => acc + 1,
-        41 => acc - 1,
-        _ => acc,
-    })
+    input
+        .iter()
+        .map(|x| match x {
+            40 => 1,
+            41 => -1,
+            _ => 0,
+        })
+        .sum::<i64>()
 }
 
-fn main() -> io::Result<()> {
-    Ok(println!("{}", calc_floor(&fs::read("input.txt")?)))
+fn main() {
+    println!("{}", calc_floor(include_bytes!("../input.txt")));
 }
 
 #[cfg(test)]
