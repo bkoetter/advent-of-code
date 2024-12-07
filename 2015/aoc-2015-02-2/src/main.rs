@@ -1,6 +1,6 @@
 use std::io::BufRead;
 
-fn calc_ribon(input: &[u8]) -> u32 {
+fn calc_ribbon(input: &[u8]) -> u32 {
     input
         .lines()
         .map_while(Result::ok)
@@ -19,5 +19,18 @@ fn calc_ribon(input: &[u8]) -> u32 {
 }
 
 fn main() {
-    println!("{:?}", calc_ribon(include_bytes!("../input.txt")));
+    println!("{:?}", calc_ribbon(include_bytes!("../input.txt")));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn try_dim_1() {
+        assert_eq!(34, calc_ribbon(b"2x3x4"))
+    }
+    #[test]
+    fn try_dim_2() {
+        assert_eq!(14, calc_ribbon(b"1x1x10"))
+    }
 }
