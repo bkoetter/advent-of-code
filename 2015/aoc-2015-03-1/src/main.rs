@@ -3,7 +3,7 @@ use itertools::Itertools;
 fn calc_houses(input: &[u8]) -> usize {
     input
         .iter()
-        .fold(vec![(0, 0)], |mut acc: Vec<(i16, i16)>, x| match x {
+        .fold(vec![(0, 0)], |mut acc: Vec<(i8, i8)>, x| match x {
             60 => {
                 acc.append(vec![(acc[acc.len() - 1].0 + 1, acc[acc.len() - 1].1)].as_mut());
                 acc
