@@ -1,110 +1,37 @@
 use itertools::Itertools;
 
 fn calc_houses(input: &[u8]) -> usize {
+    let direction = |position: (i8, i8), direction: u8| {
+        match direction {
+            b'<' => (position.0 + 1, position.1),
+            b'>' => (position.0 - 1, position.1),
+            b'^' => (position.0, position.1 + 1),
+            b'v' => (position.0, position.1 - 1),
+            _ => position,
+        }
+    };
     input
         .iter()
         .fold(
             vec![((0i8, 0i8), (0i8, 0i8))],
-            |mut acc: Vec<((i8, i8), (i8, i8))>, x| {
+            |mut acc: Vec<((i8, i8), (i8, i8))>, &x| {
                 if acc.len() % 2 == 0 {
-                    match x {
-                        60 => {
-                            acc.append(
-                                vec![(
-                                    (acc[acc.len() - 1].0.0 + 1, acc[acc.len() - 1].0.1),
-                                    (acc[acc.len() - 1].1.0, acc[acc.len() - 1].1.1),
-                                )]
-                                .as_mut(),
-                            );
-                            acc
-                        }
-                        62 => {
-                            acc.append(
-                                vec![(
-                                    (acc[acc.len() - 1].0.0 - 1, acc[acc.len() - 1].0.1),
-                                    (acc[acc.len() - 1].1.0, acc[acc.len() - 1].1.1),
-                                )]
-                                .as_mut(),
-                            );
-                            acc
-                        }
-                        94 => {
-                            acc.append(
-                                vec![(
-                                    (acc[acc.len() - 1].0.0, acc[acc.len() - 1].0.1 + 1),
-                                    (acc[acc.len() - 1].1.0, acc[acc.len() - 1].1.1),
-                                )]
-                                .as_mut(),
-                            );
-                            acc
-                        }
-                        118 => {
-                            acc.append(
-                                vec![(
-                                    (acc[acc.len() - 1].0.0, acc[acc.len() - 1].0.1 - 1),
-                                    (acc[acc.len() - 1].1.0, acc[acc.len() - 1].1.1),
-                                )]
-                                .as_mut(),
-                            );
-                            acc
-                        }
-                        _ => acc,
-                    }
+                    acc.push((
+                        direction(acc[acc.len() - 1].0, x),
+                        acc.last().unwrap().1,
+                    ));
+                    acc
                 } else {
-                    match x {
-                        60 => {
-                            acc.append(
-                                vec![(
-                                    (acc[acc.len() - 1].0.0, acc[acc.len() - 1].0.1),
-                                    (acc[acc.len() - 1].1.0 + 1, acc[acc.len() - 1].1.1),
-                                )]
-                                    .as_mut(),
-                            );
-                            acc
-                        }
-                        62 => {
-                            acc.append(
-                                vec![(
-                                    (acc[acc.len() - 1].0.0, acc[acc.len() - 1].0.1),
-                                    (acc[acc.len() - 1].1.0 - 1, acc[acc.len() - 1].1.1),
-                                )]
-                                    .as_mut(),
-                            );
-                            acc
-                        }
-                        94 => {
-                            acc.append(
-                                vec![(
-                                    (acc[acc.len() - 1].0.0, acc[acc.len() - 1].0.1),
-                                    (acc[acc.len() - 1].1.0, acc[acc.len() - 1].1.1 + 1),
-                                )]
-                                    .as_mut(),
-                            );
-                            acc
-                        }
-                        118 => {
-                            acc.append(
-                                vec![(
-                                    (acc[acc.len() - 1].0.0, acc[acc.len() - 1].0.1),
-                                    (acc[acc.len() - 1].1.0, acc[acc.len() - 1].1.1 - 1),
-                                )]
-                                    .as_mut(),
-                            );
-                            acc
-                        }
-                        _ => acc,
-                    }
+                    acc.push((
+                        acc.last().unwrap().0,
+                        direction(acc[acc.len() - 1].1, x),
+                    ));
+                    acc
                 }
             },
         )
         .iter()
-        .fold(
-            vec![(0i8, 0i8)], |mut acc, x| {
-                acc.append(&mut vec![x.0]);
-                acc.append(&mut vec![x.1]);
-                acc
-            })
-        .into_iter()
+        .flat_map(|(santa, robo)| vec![santa, robo])
         .unique()
         .collect::<Vec<_>>()
         .len()
@@ -119,6 +46,14 @@ mod tests {
     use super::*;
     #[test]
     fn try_houses_1() {
-        assert_eq!(1, calc_houses(b"1"))
+        assert_eq!(3, calc_houses(b"^v"))
+    }
+    #[test]
+    fn try_houses_2() {
+        assert_eq!(3, calc_houses(b"^>v<"))
+    }
+    #[test]
+    fn try_houses_3() {
+        assert_eq!(11, calc_houses(b"^v^v^v^v^v"))
     }
 }
