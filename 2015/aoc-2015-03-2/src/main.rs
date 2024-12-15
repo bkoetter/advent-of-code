@@ -16,16 +16,10 @@ fn calc_houses(input: &[u8]) -> usize {
             vec![((0i8, 0i8), (0i8, 0i8))],
             |mut acc: Vec<((i8, i8), (i8, i8))>, &x| {
                 if acc.len() % 2 == 0 {
-                    acc.push((
-                        direction(acc[acc.len() - 1].0, x),
-                        acc.last().unwrap().1,
-                    ));
+                    acc.push((direction(acc[acc.len() - 1].0, x), acc.last().unwrap().1,));
                     acc
                 } else {
-                    acc.push((
-                        acc.last().unwrap().0,
-                        direction(acc[acc.len() - 1].1, x),
-                    ));
+                    acc.push((acc.last().unwrap().0, direction(acc[acc.len() - 1].1, x)));
                     acc
                 }
             },
