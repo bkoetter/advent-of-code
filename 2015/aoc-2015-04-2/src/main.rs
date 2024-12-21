@@ -20,7 +20,7 @@ mod tests {
 
     #[test]
     fn test_get_md5() {
-        assert_eq!(get_md5("abcdef").unwrap().1, 609043);
-        assert_eq!(get_md5("pqrstuv").unwrap().1, 1048970);
+        assert_eq!(get_md5("abcdef").unwrap().1, 6742839);
+        assert_eq!(get_md5("pqrstuv").unwrap().1, 5714438);
     }
 }

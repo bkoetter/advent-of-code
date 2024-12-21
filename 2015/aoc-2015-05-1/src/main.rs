@@ -3,8 +3,13 @@ use std::io::BufRead;
 fn get_nice_stings(input: &[u8]) -> u16 {
     let mut nice_string_count = 0;
     for line in input.lines().map(|line| line.unwrap()) {
-        if line.chars().filter(|c| ['a', 'e', 'i', 'o', 'u'].contains(c)).count() < 3 {
-            continue
+        if line
+            .chars()
+            .filter(|c| ['a', 'e', 'i', 'o', 'u'].contains(c))
+            .count()
+            < 3
+        {
+            continue;
         }
         let mut previous_char: char = ' ';
         let mut is_char_same = false;
@@ -18,7 +23,13 @@ fn get_nice_stings(input: &[u8]) -> u16 {
         if !is_char_same {
             continue;
         }
-        if line.contains("ab") || line.contains("cd") || line.contains("xy") || line.contains("pq")
+        // if line.contains("ab") || line.contains("cd") || line.contains("xy") || line.contains("pq")
+        if ["ab", "cd", "pq", "xy"]
+            .iter()
+            .find(|&x| line.contains(x))
+            .iter()
+            .count()
+            > 0
         {
             continue;
         }

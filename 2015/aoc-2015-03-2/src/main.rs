@@ -1,14 +1,12 @@
 use itertools::Itertools;
 
 fn calc_houses(input: &[u8]) -> usize {
-    let direction = |position: (i8, i8), direction: u8| {
-        match direction {
-            b'<' => (position.0 + 1, position.1),
-            b'>' => (position.0 - 1, position.1),
-            b'^' => (position.0, position.1 + 1),
-            b'v' => (position.0, position.1 - 1),
-            _ => position,
-        }
+    let direction = |position: (i8, i8), direction: u8| match direction {
+        b'<' => (position.0 + 1, position.1),
+        b'>' => (position.0 - 1, position.1),
+        b'^' => (position.0, position.1 + 1),
+        b'v' => (position.0, position.1 - 1),
+        _ => position,
     };
     input
         .iter()
@@ -16,7 +14,7 @@ fn calc_houses(input: &[u8]) -> usize {
             vec![((0i8, 0i8), (0i8, 0i8))],
             |mut acc: Vec<((i8, i8), (i8, i8))>, &x| {
                 if acc.len() % 2 == 0 {
-                    acc.push((direction(acc[acc.len() - 1].0, x), acc.last().unwrap().1,));
+                    acc.push((direction(acc[acc.len() - 1].0, x), acc.last().unwrap().1));
                     acc
                 } else {
                     acc.push((acc.last().unwrap().0, direction(acc[acc.len() - 1].1, x)));
