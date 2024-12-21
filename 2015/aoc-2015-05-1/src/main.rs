@@ -1,41 +1,15 @@
 use std::io::BufRead;
 
-fn get_nice_stings(input: &[u8]) -> u16 {
-    let mut nice_string_count = 0;
-    for line in input.lines().map(|line| line.unwrap()) {
-        if line
-            .chars()
-            .filter(|c| ['a', 'e', 'i', 'o', 'u'].contains(c))
-            .count()
-            < 3
-        {
-            continue;
-        }
-        let mut previous_char: char = ' ';
-        let mut is_char_same = false;
-        for char in line.chars() {
-            if char.eq(&previous_char) {
-                is_char_same = true;
-                break;
-            }
-            previous_char = char;
-        }
-        if !is_char_same {
-            continue;
-        }
-        // if line.contains("ab") || line.contains("cd") || line.contains("xy") || line.contains("pq")
-        if ["ab", "cd", "pq", "xy"]
-            .iter()
-            .find(|&x| line.contains(x))
-            .iter()
-            .count()
-            > 0
-        {
-            continue;
-        }
-        nice_string_count += 1;
-    }
-    nice_string_count
+fn get_nice_stings(input: &[u8]) -> usize {
+    input
+        .lines()
+        .map(|line| line.unwrap())
+        .filter(|line| {
+            line.chars().filter(|&c| "aeiou".contains(c)).count() > 2
+                && line.as_bytes().windows(2).any(|w| w[0] == w[1])
+                && !["ab", "cd", "pq", "xy"].iter().any(|&x| line.contains(x))
+        })
+        .count()
 }
 
 fn main() {
