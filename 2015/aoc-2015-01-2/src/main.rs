@@ -1,6 +1,5 @@
 use itertools::FoldWhile::{Continue, Done};
 use itertools::Itertools;
-use std::{fs, io};
 
 fn calc_floor(input: &[u8]) -> Result<i32, i32> {
     let calc = |acc: Result<i32, i32>, operand, idx| {
@@ -14,17 +13,17 @@ fn calc_floor(input: &[u8]) -> Result<i32, i32> {
         .iter()
         .enumerate()
         .fold_while(Err(0), |acc, b| match b.1 {
-            40 => calc(acc, 1, b.0),
-            41 => calc(acc, -1, b.0),
+            b'(' => calc(acc, 1, b.0),
+            b')' => calc(acc, -1, b.0),
             _ => Continue(acc),
         })
         .into_inner()
 }
 
-fn main() -> io::Result<()> {
-    match calc_floor(&fs::read("input.txt")?) {
-        Ok(floor) => Ok(println!("Reached basement at character position {floor}")),
-        Err(_) => Ok(println!("Santa never reached the basement")),
+fn main() {
+    match calc_floor(include_bytes!("../input.txt")) {
+        Ok(floor) => println!("Reached basement at character position {floor}"),
+        Err(_) => println!("Santa never reached the basement"),
     }
 }
 
