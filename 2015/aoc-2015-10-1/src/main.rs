@@ -30,9 +30,8 @@ fn string_numbers_to_u8_vec(input: &str) -> Vec<u8> {
 }
 
 fn main() {
-    // let input = "1321131112";
-    let input = "1";
-    println!("{}", get_look_and_say(string_numbers_to_u8_vec(input), 2));
+    let input = "1321131112";
+    println!("{}", get_look_and_say(string_numbers_to_u8_vec(input), 50));
 }
 
 #[cfg(test)]
