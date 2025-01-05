@@ -1,0 +1,8 @@
+[package]
+name = "aoc-2015-12-2"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = "1.0.217"
+serde_json = "1.0.134"
