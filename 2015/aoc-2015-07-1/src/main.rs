@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::process::exit;
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -11,7 +12,7 @@ enum Operator {
 }
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Type {
     Int(u16),
     Ref(&'static [u8]),
@@ -20,10 +21,10 @@ enum Type {
 #[allow(dead_code)]
 #[derive(Debug)]
 struct Signal {
-    signal: Option<Type>,
-    operator: Option<Operator>,
-    left_operand: Option<Type>,
-    right_operand: Option<Type>,
+    sig: Option<Type>,
+    op: Option<Operator>,
+    l_op: Option<Type>,
+    r_op: Option<Type>,
 }
 
 fn build_data(input: &'static str) -> HashMap<&'static [u8], Signal> {
@@ -36,20 +37,20 @@ fn build_data(input: &'static str) -> HashMap<&'static [u8], Signal> {
                     Some((
                         x[2].as_bytes(),
                         Signal {
-                            signal: Some(Type::Int(int)),
-                            operator: None,
-                            left_operand: None,
-                            right_operand: None,
+                            sig: Some(Type::Int(int)),
+                            op: None,
+                            l_op: None,
+                            r_op: None,
                         },
                     ))
                 } else {
                     Some((
                         x[2].as_bytes(),
                         Signal {
-                            signal: Some(Type::Ref(x[0].as_bytes())),
-                            operator: None,
-                            left_operand: None,
-                            right_operand: None,
+                            sig: Some(Type::Ref(x[0].as_bytes())),
+                            op: None,
+                            l_op: None,
+                            r_op: None,
                         },
                     ))
                 }
@@ -58,20 +59,20 @@ fn build_data(input: &'static str) -> HashMap<&'static [u8], Signal> {
                     Some((
                         x[3].as_bytes(),
                         Signal {
-                            signal: None,
-                            operator: Some(Operator::Not),
-                            left_operand: Some(Type::Int(int)),
-                            right_operand: None,
+                            sig: None,
+                            op: Some(Operator::Not),
+                            l_op: None,
+                            r_op: Some(Type::Int(int)),
                         },
                     ))
                 } else {
                     Some((
                         x[3].as_bytes(),
                         Signal {
-                            signal: None,
-                            operator: Some(Operator::Not),
-                            left_operand: Some(Type::Ref(x[1].as_bytes())),
-                            right_operand: None,
+                            sig: None,
+                            op: Some(Operator::Not),
+                            l_op: None,
+                            r_op: Some(Type::Ref(x[1].as_bytes())),
                         },
                     ))
                 }
@@ -80,20 +81,20 @@ fn build_data(input: &'static str) -> HashMap<&'static [u8], Signal> {
                     Some((
                         x[4].as_bytes(),
                         Signal {
-                            signal: None,
-                            operator: Some(Operator::And),
-                            left_operand: Some(Type::Int(int)),
-                            right_operand: Some(Type::Ref(x[2].as_bytes())),
+                            sig: None,
+                            op: Some(Operator::And),
+                            l_op: Some(Type::Int(int)),
+                            r_op: Some(Type::Ref(x[2].as_bytes())),
                         },
                     ))
                 } else {
                     Some((
                         x[4].as_bytes(),
                         Signal {
-                            signal: None,
-                            operator: Some(Operator::And),
-                            left_operand: Some(Type::Ref(x[0].as_bytes())),
-                            right_operand: Some(Type::Ref(x[2].as_bytes())),
+                            sig: None,
+                            op: Some(Operator::And),
+                            l_op: Some(Type::Ref(x[0].as_bytes())),
+                            r_op: Some(Type::Ref(x[2].as_bytes())),
                         },
                     ))
                 }
@@ -102,20 +103,20 @@ fn build_data(input: &'static str) -> HashMap<&'static [u8], Signal> {
                     Some((
                         x[4].as_bytes(),
                         Signal {
-                            signal: None,
-                            operator: Some(Operator::Or),
-                            left_operand: Some(Type::Int(int)),
-                            right_operand: Some(Type::Ref(x[2].as_bytes())),
+                            sig: None,
+                            op: Some(Operator::Or),
+                            l_op: Some(Type::Int(int)),
+                            r_op: Some(Type::Ref(x[2].as_bytes())),
                         },
                     ))
                 } else {
                     Some((
                         x[4].as_bytes(),
                         Signal {
-                            signal: None,
-                            operator: Some(Operator::Or),
-                            left_operand: Some(Type::Ref(x[0].as_bytes())),
-                            right_operand: Some(Type::Ref(x[2].as_bytes())),
+                            sig: None,
+                            op: Some(Operator::Or),
+                            l_op: Some(Type::Ref(x[0].as_bytes())),
+                            r_op: Some(Type::Ref(x[2].as_bytes())),
                         },
                     ))
                 }
@@ -124,10 +125,10 @@ fn build_data(input: &'static str) -> HashMap<&'static [u8], Signal> {
                     Some((
                         x[4].as_bytes(),
                         Signal {
-                            signal: None,
-                            operator: Some(Operator::Lshift),
-                            left_operand: Some(Type::Int(int)),
-                            right_operand: Some(Type::Ref(x[2].as_bytes())),
+                            sig: None,
+                            op: Some(Operator::Lshift),
+                            l_op: Some(Type::Ref(x[0].as_bytes())),
+                            r_op: Some(Type::Int(int)),
                         },
                     ))
                 } else {
@@ -139,10 +140,10 @@ fn build_data(input: &'static str) -> HashMap<&'static [u8], Signal> {
                     Some((
                         x[4].as_bytes(),
                         Signal {
-                            signal: None,
-                            operator: Some(Operator::Rshift),
-                            left_operand: Some(Type::Int(int)),
-                            right_operand: Some(Type::Ref(x[2].as_bytes())),
+                            sig: None,
+                            op: Some(Operator::Rshift),
+                            l_op: Some(Type::Ref(x[0].as_bytes())),
+                            r_op: Some(Type::Int(int)),
                         },
                     ))
                 } else {
@@ -157,41 +158,87 @@ fn build_data(input: &'static str) -> HashMap<&'static [u8], Signal> {
         .collect()
 }
 
+fn get_signal<'a>(
+    wire: &'a [u8],
+    data: &HashMap<&[u8], Signal>,
+    seen: &mut HashMap<&'a [u8], u16>,
+) -> u16 {
+    println!(
+        "{wire:?}, {:?} -> {:?}",
+        String::from_utf8(wire.to_vec()).unwrap(),
+        data[wire]
+    );
+    match data[wire] {
+        Signal {
+            sig: Some(Type::Int(n)),
+            ..
+        } => seen.insert(wire, n).unwrap_or(n),
+        Signal {
+            sig: Some(Type::Ref(r)),
+            ..
+        } => seen
+            .get(r)
+            .copied()
+            .unwrap_or_else(|| get_signal(r, data, seen)),
+        Signal {
+            sig: None,
+            op: Some(Operator::And),
+            l_op: Some(Type::Ref(lr)),
+            r_op: Some(Type::Ref(rr)),
+        } => {
+            seen.get(lr)
+                .copied()
+                .unwrap_or_else(|| get_signal(lr, data, seen))
+                & seen
+                    .get(rr)
+                    .copied()
+                    .unwrap_or_else(|| get_signal(rr, data, seen))
+        }
+        Signal {
+            sig: None,
+            op: Some(Operator::And),
+            l_op: Some(Type::Int(lr)),
+            r_op: Some(Type::Ref(rr)),
+        } => lr & seen.get(rr).copied().unwrap_or_else(|| get_signal(rr, data, seen)),
+        Signal {
+            sig: None,
+            op: Some(Operator::Or),
+            l_op: Some(Type::Ref(lr)),
+            r_op: Some(Type::Ref(rr)),
+        } => get_signal(lr, data, seen) | get_signal(rr, data, seen),
+        Signal {
+            sig: None,
+            op: Some(Operator::Not),
+            l_op: None,
+            r_op: Some(Type::Ref(rr)),
+        } => !get_signal(rr, data, seen),
+        Signal {
+            sig: None,
+            op: Some(Operator::Lshift),
+            l_op: Some(Type::Ref(lr)),
+            r_op: Some(Type::Int(rr)),
+        } => get_signal(lr, data, seen) << rr,
+        Signal {
+            sig: None,
+            op: Some(Operator::Rshift),
+            l_op: Some(Type::Ref(lr)),
+            r_op: Some(Type::Int(rr)),
+        } => get_signal(lr, data, seen) << rr,
+        _ => {
+            println!(
+                "Wire: {}: {:?}",
+                String::from_utf8(wire.to_vec()).unwrap(),
+                data[wire]
+            );
+            exit(0)
+        }
+    }
+}
+
 fn main() {
     let data = build_data(include_str!("../input.txt"));
     // for item in &data {
     //     println!("{item:?}");
     // }
-    println!("{}", data.len())
+    println!("{}", get_signal(b"a", &data, &mut HashMap::new()));
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//
-//     #[test]
-//     fn test_get_bitwise() {
-//         assert_eq!(
-//             calculate(
-//                 "123 -> x
-// 456 -> y
-// x AND y -> d
-// x OR y -> e
-// x LSHIFT 2 -> f
-// y RSHIFT 2 -> g
-// NOT x -> h
-// NOT y -> i"
-//             ),
-//             HashMap::from([
-//                 ("h", 65412),
-//                 ("g", 114),
-//                 ("d", 72),
-//                 ("y", 456),
-//                 ("f", 492),
-//                 ("e", 507),
-//                 ("x", 123),
-//                 ("i", 65079)
-//             ])
-//         )
-//     }
-// }
