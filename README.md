@@ -1,4 +1,4 @@
-# [Advent of Code 2023](https://adventofcode.com)
+# [Advent of Code](https://adventofcode.com)
 My humble attempt to complete Advent of Code
 
-##### Goal: Solve all puzzles using Rust
+##### Goal: Solve all puzzles using Rust functional style
