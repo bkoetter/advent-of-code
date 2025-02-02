@@ -245,6 +245,18 @@ fn get_signal<'a>(
 }
 
 fn main() {
-    let data = build_data(include_str!("../input.txt"));
+    let mut data = build_data(include_str!("../input.txt"));
+    let a = get_signal(b"a", &data, &mut HashMap::new());
+    println!("{}", a);
+    // Day 7 part 2:
+    data.insert(
+        b"b",
+        Signal {
+            sig: Some(Type::Int(a)),
+            op: None,
+            l_op: None,
+            r_op: None,
+        },
+    );
     println!("{}", get_signal(b"a", &data, &mut HashMap::new()));
 }
