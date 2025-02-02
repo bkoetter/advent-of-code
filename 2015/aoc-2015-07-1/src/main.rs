@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::process::exit;
 
-#[allow(dead_code)]
 #[derive(Debug)]
 enum Operator {
     And,
@@ -11,14 +10,12 @@ enum Operator {
     Not,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 enum Type {
     Int(u16),
     Ref(&'static [u8]),
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 struct Signal {
     sig: Option<Type>,
@@ -249,8 +246,5 @@ fn get_signal<'a>(
 
 fn main() {
     let data = build_data(include_str!("../input.txt"));
-    // for item in &data {
-    //     println!("{item:?}");
-    // }
     println!("{}", get_signal(b"a", &data, &mut HashMap::new()));
 }
