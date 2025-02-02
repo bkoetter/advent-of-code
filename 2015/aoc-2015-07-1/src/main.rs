@@ -163,19 +163,13 @@ fn get_signal<'a>(
     data: &HashMap<&[u8], Signal>,
     seen: &mut HashMap<&'a [u8], u16>,
 ) -> u16 {
-    println!(
-        "{wire:?}, {:?} -> {:?}",
-        String::from_utf8(wire.to_vec()).unwrap(),
-        seen
-    );
+    // println!(
+    //     "{wire:?}, {:?} -> {seen:?}",
+    //     String::from_utf8(wire.to_vec()).unwrap()
+    // );
     if let Some(n) = seen.get(&wire) {
         return *n;
     }
-    // println!(
-    //     "{wire:?}, {:?} -> {:?}",
-    //     String::from_utf8(wire.to_vec()).unwrap(),
-    //     data[wire]
-    // );
     match data[wire] {
         Signal {
             sig: Some(Type::Int(n)),
@@ -194,13 +188,8 @@ fn get_signal<'a>(
             l_op: Some(Type::Ref(lr)),
             r_op: Some(Type::Ref(rr)),
         } => {
-            seen.get(lr)
-                .copied()
-                .unwrap_or_else(|| get_signal(lr, data, seen))
-                & seen
-                    .get(rr)
-                    .copied()
-                    .unwrap_or_else(|| get_signal(rr, data, seen))
+            let signal = get_signal(lr, data, seen) & get_signal(rr, data, seen);
+            seen.insert(wire, signal).unwrap_or(signal)
         }
         Signal {
             sig: None,
@@ -208,10 +197,8 @@ fn get_signal<'a>(
             l_op: Some(Type::Int(lr)),
             r_op: Some(Type::Ref(rr)),
         } => {
-            lr & seen
-                .get(rr)
-                .copied()
-                .unwrap_or_else(|| get_signal(rr, data, seen))
+            let signal = lr & get_signal(rr, data, seen);
+            seen.insert(wire, signal).unwrap_or(signal)
         }
         Signal {
             sig: None,
@@ -219,43 +206,36 @@ fn get_signal<'a>(
             l_op: Some(Type::Ref(lr)),
             r_op: Some(Type::Ref(rr)),
         } => {
-            seen.get(lr)
-                .copied()
-                .unwrap_or_else(|| get_signal(lr, data, seen))
-                | seen
-                    .get(rr)
-                    .copied()
-                    .unwrap_or_else(|| get_signal(rr, data, seen))
+            let signal = get_signal(lr, data, seen) | get_signal(rr, data, seen);
+            seen.insert(wire, signal).unwrap_or(signal)
         }
         Signal {
             sig: None,
             op: Some(Operator::Not),
             l_op: None,
             r_op: Some(Type::Ref(rr)),
-        } => !seen
-            .get(rr)
-            .copied()
-            .unwrap_or_else(|| get_signal(rr, data, seen)),
+        } => {
+            let signal = !get_signal(rr, data, seen);
+            seen.insert(wire, signal).unwrap_or(signal)
+        }
         Signal {
             sig: None,
             op: Some(Operator::Lshift),
             l_op: Some(Type::Ref(lr)),
             r_op: Some(Type::Int(rr)),
         } => {
-            seen.get(lr)
-                .copied()
-                .unwrap_or_else(|| get_signal(lr, data, seen))
-                << rr
+            let signal = get_signal(lr, data, seen) << rr;
+            seen.insert(wire, signal).unwrap_or(signal)
         }
         Signal {
             sig: None,
             op: Some(Operator::Rshift),
             l_op: Some(Type::Ref(lr)),
             r_op: Some(Type::Int(rr)),
-        } => seen
-            .get(lr)
-            .copied()
-            .unwrap_or_else(|| get_signal(lr, data, seen) >> rr),
+        } => {
+            let signal = get_signal(lr, data, seen) >> rr;
+            seen.insert(wire, signal).unwrap_or(signal)
+        }
         _ => {
             println!(
                 "Wire: {}: {:?}",
@@ -272,5 +252,5 @@ fn main() {
     // for item in &data {
     //     println!("{item:?}");
     // }
-    println!("{}", get_signal(b"h", &data, &mut HashMap::new()));
+    println!("{}", get_signal(b"a", &data, &mut HashMap::new()));
 }
