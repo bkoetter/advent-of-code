@@ -32,7 +32,10 @@ fn total_brightness(input: Vec<u8>) -> i64 {
 }
 
 fn main() {
-    println!("{}", total_brightness(Vec::from(include_bytes!("../input.txt"))));
+    println!(
+        "{}",
+        total_brightness(Vec::from(include_bytes!("../input.txt")))
+    );
 }
 
 #[cfg(test)]
@@ -49,6 +52,9 @@ mod tests {
     }
     #[test]
     fn test_total_brightness_3() {
-        assert_eq!(total_brightness(Vec::from(b"toggle 0,0 through 999,999")), 2_000_000)
+        assert_eq!(
+            total_brightness(Vec::from(b"toggle 0,0 through 999,999")),
+            2_000_000
+        )
     }
 }
