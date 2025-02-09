@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::process::exit;
 
-#[derive(Debug)]
 enum Operator {
     And,
     Or,
@@ -10,13 +9,11 @@ enum Operator {
     Not,
 }
 
-#[derive(Debug, Clone)]
 enum Type {
     Int(u16),
     Ref(&'static [u8]),
 }
 
-#[derive(Debug)]
 struct Signal {
     sig: Option<Type>,
     op: Option<Operator>,
@@ -235,11 +232,10 @@ fn get_signal<'a>(
         }
         _ => {
             println!(
-                "Wire: {}: {:?}",
-                String::from_utf8(wire.to_vec()).unwrap(),
-                data[wire]
+                "ERROR: Cannot map wire: {}",
+                String::from_utf8(wire.to_vec()).unwrap()
             );
-            exit(0)
+            exit(1)
         }
     }
 }
