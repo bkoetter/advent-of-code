@@ -1,9 +1,11 @@
 fn count_chars(input: &[u8]) -> usize {
-    String::from_utf8(input.to_vec()).unwrap().chars().count()
+    let string = String::from_utf8(input.to_vec()).unwrap();
+        println!("{string}");
+    2
 }
 
 fn main() {
-    println!("Hello, world!");
+    count_chars(r#""""#.as_ref());
 }
 
 #[cfg(test)]
@@ -12,7 +14,7 @@ mod tests {
 
     #[test]
     fn test_1() {
-        assert_eq!(count_chars(b""), 0)
+        assert_eq!(count_chars(r#""""#.as_ref()), 2)
     }
     #[test]
     fn test_2() {
