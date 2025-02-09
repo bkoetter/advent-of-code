@@ -157,10 +157,6 @@ fn get_signal<'a>(
     data: &HashMap<&[u8], Signal>,
     seen: &mut HashMap<&'a [u8], u16>,
 ) -> u16 {
-    // println!(
-    //     "{wire:?}, {:?} -> {seen:?}",
-    //     String::from_utf8(wire.to_vec()).unwrap()
-    // );
     if let Some(n) = seen.get(&wire) {
         return *n;
     }
