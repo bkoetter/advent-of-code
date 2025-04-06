@@ -9,7 +9,7 @@ type CityDistances = HashMap<(City, City), Distance>;
 fn main() {
     let input = include_str!("../input.txt");
     let distances_between_cities = get_distances_between_cities(input);
-    let cities = get_cities(distances_between_cities.clone());
+    let cities = get_cities(&distances_between_cities);
     println!(
         "{}",
         cities
@@ -21,10 +21,10 @@ fn main() {
     )
 }
 
-fn get_cities(city_distances: CityDistances) -> Vec<City> {
+fn get_cities(city_distances: &CityDistances) -> Vec<City> {
     city_distances
-        .into_keys()
-        .flat_map(|cities| [cities.0, cities.1])
+        .keys()
+        .flat_map(|cities| [cities.0.to_string(), cities.1.to_string()])
         .unique()
         .collect()
 }
