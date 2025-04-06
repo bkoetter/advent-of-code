@@ -16,7 +16,8 @@ fn main() {
             .iter()
             .permutations(cities.len())
             .map(|list| calculate_distance(list, &distances_between_cities))
-            .min().unwrap()
+            .min()
+            .unwrap()
     )
 }
 
@@ -39,10 +40,10 @@ fn get_distances_between_cities(input: &str) -> CityDistances {
 fn calculate_distance(cities: Vec<&City>, distances_between_cities: &CityDistances) -> Distance {
     cities
         .windows(2)
-        .map(|cities| sorted(cities).collect::<Vec<_>>())
+        .map(|cities| sorted(cities).collect_tuple::<(&&City, &&City)>().unwrap())
         .map(|cities| {
             distances_between_cities
-                .get(&(cities[0].to_string(), cities[1].to_string()))
+                .get(&(cities.0.to_string(), cities.1.to_string()))
                 .unwrap()
         })
         .sum()
