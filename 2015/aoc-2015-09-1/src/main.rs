@@ -11,12 +11,21 @@ fn main() {
     let distances_between_cities = get_distances_between_cities(input);
     let cities = get_cities(&distances_between_cities);
     println!(
-        "{}",
+        "Min: {}",
         cities
             .iter()
             .permutations(cities.len())
             .map(|list| calculate_distance(list, &distances_between_cities))
             .min()
+            .unwrap()
+    );
+    println!(
+        "Max: {}",
+        cities
+            .iter()
+            .permutations(cities.len())
+            .map(|list| calculate_distance(list, &distances_between_cities))
+            .max()
             .unwrap()
     )
 }
@@ -60,7 +69,7 @@ impl FromStr for CityDistance {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts = s.split_whitespace().collect::<Vec<_>>();
         Ok(CityDistance {
-            cities: sorted([parts[0].to_string(), parts[2].to_string()])
+            cities: sorted([parts[0].to_owned(), parts[2].to_owned()])
                 .collect_tuple()
                 .unwrap(),
             distance: parts[4].parse::<u32>().unwrap(),
