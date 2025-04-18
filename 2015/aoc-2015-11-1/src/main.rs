@@ -1,28 +1,21 @@
 fn get_new_password(input: &[u8]) -> Vec<u8> {
-    input
-        .iter()
-        .rev()
-        .fold(vec![], |mut acc, &x| {
-            if acc.iter().all(|&c| c == b'a') {
-                if x == b'z' {
-                    acc.push(b'a')
-                } else {
-                    acc.push(x + 1)
-                }
-            } else {
-                acc.push(x)
-            }
-            acc
-        })
-        .into_iter()
-        .rev()
-        .collect()
+    let mut result = input.to_vec();
+    
+    for c in result.iter_mut().rev() {
+        if *c == b'z' {
+            *c = b'a';
+        } else {
+            *c += 1;
+            break;
+        }
+    }
+    result
 }
 
 fn main() {
     println!(
         "New password: {}",
-        String::from_utf8_lossy(get_new_password(b"hepxcrrq").as_slice())
+        String::from_utf8_lossy(&get_new_password(b"hepxcrrq"))
     );
 }
 
