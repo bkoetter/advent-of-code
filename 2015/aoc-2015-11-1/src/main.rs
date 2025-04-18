@@ -16,7 +16,7 @@ fn get_new_password(input: &[u8]) -> Vec<u8> {
         })
         .into_iter()
         .rev()
-        .collect::<Vec<u8>>()
+        .collect()
 }
 
 fn main() {
@@ -61,5 +61,9 @@ mod tests {
     #[test]
     fn test_get_new_password_9() {
         assert_eq!(get_new_password(b"zzzzzzzz"), b"aaaaaaaa")
+    }
+    #[test]
+    fn test_get_new_password_10() {
+        assert_eq!(get_new_password(b"aaaazaaa"), b"aaaazaab")
     }
 }
