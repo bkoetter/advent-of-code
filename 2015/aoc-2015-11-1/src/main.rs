@@ -1,6 +1,6 @@
 fn password_increment(input: &[u8]) -> Vec<u8> {
     let mut result = input.to_vec();
-    
+
     for c in result.iter_mut().rev() {
         if *c == b'z' {
             *c = b'a';
@@ -13,7 +13,15 @@ fn password_increment(input: &[u8]) -> Vec<u8> {
 }
 
 fn get_new_password(input: &[u8]) -> Vec<u8> {
-    password_increment(input)
+    let mut new_password = password_increment(input);
+    while !new_password
+        .windows(3)
+        .any(|x| *x == [x[0], x[1] + 1, x[2] + 2])
+    {
+        // println!("{}", String::from_utf8_lossy(&new_password));
+        new_password = password_increment(&new_password);
+    }
+    new_password
 }
 
 fn main() {
