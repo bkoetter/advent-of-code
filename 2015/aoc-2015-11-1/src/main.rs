@@ -1,4 +1,4 @@
-fn get_new_password(input: &[u8]) -> Vec<u8> {
+fn password_increment(input: &[u8]) -> Vec<u8> {
     let mut result = input.to_vec();
     
     for c in result.iter_mut().rev() {
@@ -10,6 +10,10 @@ fn get_new_password(input: &[u8]) -> Vec<u8> {
         }
     }
     result
+}
+
+fn get_new_password(input: &[u8]) -> Vec<u8> {
+    password_increment(input)
 }
 
 fn main() {
@@ -24,39 +28,39 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_get_new_password_1() {
-        assert_eq!(get_new_password(b"axx"), b"axy")
+    fn test_password_increment_1() {
+        assert_eq!(password_increment(b"axx"), b"axy")
     }
     #[test]
-    fn test_get_new_password_2() {
-        assert_eq!(get_new_password(b"axy"), b"axz")
+    fn test_password_increment_2() {
+        assert_eq!(password_increment(b"axy"), b"axz")
     }
     #[test]
-    fn test_get_new_password_3() {
-        assert_eq!(get_new_password(b"axz"), b"aya")
+    fn test_password_increment_3() {
+        assert_eq!(password_increment(b"axz"), b"aya")
     }
     #[test]
-    fn test_get_new_password_5() {
-        assert_eq!(get_new_password(b"aaaaaaaa"), b"aaaaaaab")
+    fn test_password_increment_5() {
+        assert_eq!(password_increment(b"aaaaaaaa"), b"aaaaaaab")
     }
     #[test]
-    fn test_get_new_password_6() {
-        assert_eq!(get_new_password(b"yyyyyyzz"), b"yyyyyzaa")
+    fn test_password_increment_6() {
+        assert_eq!(password_increment(b"yyyyyyzz"), b"yyyyyzaa")
     }
     #[test]
-    fn test_get_new_password_7() {
-        assert_eq!(get_new_password(b"yzzzzzzz"), b"zaaaaaaa")
+    fn test_password_increment_7() {
+        assert_eq!(password_increment(b"yzzzzzzz"), b"zaaaaaaa")
     }
     #[test]
-    fn test_get_new_password_8() {
-        assert_eq!(get_new_password(b"zzzzzzzy"), b"zzzzzzzz")
+    fn test_password_increment_8() {
+        assert_eq!(password_increment(b"zzzzzzzy"), b"zzzzzzzz")
     }
     #[test]
-    fn test_get_new_password_9() {
-        assert_eq!(get_new_password(b"zzzzzzzz"), b"aaaaaaaa")
+    fn test_password_increment_9() {
+        assert_eq!(password_increment(b"zzzzzzzz"), b"aaaaaaaa")
     }
     #[test]
-    fn test_get_new_password_10() {
-        assert_eq!(get_new_password(b"aaaazaaa"), b"aaaazaab")
+    fn test_password_increment_10() {
+        assert_eq!(password_increment(b"aaaazaaa"), b"aaaazaab")
     }
 }
