@@ -16,9 +16,8 @@ fn get_new_password(input: &[u8]) -> Vec<u8> {
     let mut new_password = password_increment(input);
     while !new_password
         .windows(3)
-        .any(|x| *x == [x[0], x[1] + 1, x[2] + 2])
+        .any(|x| x == [x[0], x[0] + 1, x[0] + 2])
     {
-        // println!("{}", String::from_utf8_lossy(&new_password));
         new_password = password_increment(&new_password);
     }
     new_password
@@ -70,5 +69,9 @@ mod tests {
     #[test]
     fn test_password_increment_10() {
         assert_eq!(password_increment(b"aaaazaaa"), b"aaaazaab")
+    }
+    #[test]
+    fn test_get_new_password_1() {
+        assert_eq!(get_new_password(b"xrcdfgao"), b"xrcdfgha")
     }
 }
