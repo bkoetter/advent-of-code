@@ -38,10 +38,10 @@ fn get_new_password(input: &[u8]) -> Vec<u8> {
 }
 
 fn main() {
-    println!(
-        "New password: {}",
-        String::from_utf8_lossy(&get_new_password(b"hepxcrrq"))
-    );
+    let new_password = get_new_password(b"hepxcrrq");
+    println!("New password: {}", String::from_utf8_lossy(&new_password));
+    let new_password = get_new_password(&new_password);
+    println!("New password: {}", String::from_utf8_lossy(&new_password));
 }
 
 #[cfg(test)]
