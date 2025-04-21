@@ -17,6 +17,20 @@ fn get_new_password(input: &[u8]) -> Vec<u8> {
     while !new_password
         .windows(3)
         .any(|x| x == [x[0], x[0] + 1, x[0] + 2])
+        || new_password
+            .windows(2)
+            .fold((None, 0), |acc, x| {
+                if x == [x[0], x[0]] && acc.0.is_none_or(|b| b != x[0]) {
+                    (Some(x[0]), acc.1 + 1)
+                } else {
+                    acc
+                }
+            })
+            .1
+            < 2
+        || (new_password.contains(&b'i')
+            || new_password.contains(&b'l')
+            || new_password.contains(&b'o'))
     {
         new_password = password_increment(&new_password);
     }
@@ -72,6 +86,10 @@ mod tests {
     }
     #[test]
     fn test_get_new_password_1() {
-        assert_eq!(get_new_password(b"xrcdfgao"), b"xrcdfgha")
+        assert_eq!(get_new_password(b"abcdefgh"), b"abcdffaa")
+    }
+    #[test]
+    fn test_get_new_password_2() {
+        assert_eq!(get_new_password(b"ghijklmn"), b"ghjaabcc")
     }
 }
