@@ -408,14 +408,34 @@ def open_url(
     return response
 
 
+def https_proxy() -> str | None:
+    """Return host:port of the configured HTTPS proxy, without credentials."""
+    raw = urllib.request.getproxies().get("https")
+    if not raw:
+        return None
+    parts = urlsplit(raw if "://" in raw else f"http://{raw}")
+    return f"{parts.hostname}:{parts.port}" if parts.port else parts.hostname
+
+
 def latest_from_index(opts: Options) -> Version | None:
-    """Return the highest version linked on the download page, if any."""
+    """Return the highest version linked on the download page, if any.
+
+    An HTTP error answer returns None so that probing can take over; a
+    network failure raises, since probing the same host would fail too.
+    """
+    log.info("reading download page %s (timeout %gs)", opts.index_url, opts.timeout)
     try:
         with open_url(opts, opts.index_url) as response:
             page = response.read(MAX_INDEX_BYTES).decode("utf-8", errors="replace")
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        log.warning("cannot read download page %s: %s", opts.index_url, exc)
+    except urllib.error.HTTPError as exc:
+        log.warning("download page %s: HTTP %s", opts.index_url, exc.code)
         return None
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        reason = exc.reason if isinstance(exc, urllib.error.URLError) else exc
+        msg = f"cannot reach {opts.index_url}: {reason}"
+        if https_proxy() is None:
+            msg += " (no proxy configured; set https_proxy if this host needs one)"
+        raise Error(msg) from exc
     versions = {Version.parse(m) for m in ARCHIVE_RE.findall(page)}
     return max(versions, default=None)
 
@@ -644,6 +664,14 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     try:
         opts = resolve_options(args)
+        log.info(
+            "%s %s on Python %s, base dir %s, https proxy %s",
+            PROG,
+            __version__,
+            sys.version.split()[0],
+            opts.base_dir,
+            https_proxy() or "none",
+        )
         lock = None
         if not opts.dry_run:
             try:

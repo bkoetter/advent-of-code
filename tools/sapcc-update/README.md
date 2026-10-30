@@ -49,6 +49,17 @@ change `ReadWritePaths=` too.
 Test first: `sudo sapcc-update --dry-run -v`
 Logs: `journalctl -u sapcc-update.service`
 
+## Proxy
+
+The script uses the standard `https_proxy` / `no_proxy` environment
+variables. Hosts behind a corporate firewall usually need one; without it the
+script waits for the timeout (default 60 s, `timeout` / `SAPCC_TIMEOUT`) and
+then fails with `cannot reach ...`. For the systemd service, add to the unit:
+
+```ini
+Environment=https_proxy=http://proxy.example.com:8080
+```
+
 ## Development
 
 ```bash

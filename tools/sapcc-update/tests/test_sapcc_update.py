@@ -9,6 +9,7 @@ import io
 import json
 import os
 import shutil
+import socket
 import tempfile
 import threading
 import unittest
@@ -222,6 +223,54 @@ class EndToEndTest(unittest.TestCase):
             fcntl.flock(held, fcntl.LOCK_EX)
             rc, _ = self.run_json()
         self.assertEqual(rc, su.Exit.FAILURE)
+
+    def test_index_http_error_falls_back_to_probing(self) -> None:
+        self.publish("2.19.2", link=False)
+        url = f"http://127.0.0.1:{self.server.server_port}"
+        with mock.patch.dict(os.environ, {"SAPCC_INDEX_URL": f"{url}/missing"}):
+            rc, res = self.run_json()
+        self.assertEqual((rc, res["latest"]), (0, "2.19.2"))
+
+
+class UnreachableHostTest(unittest.TestCase):
+    """A host that accepts connections but never answers."""
+
+    def test_fails_fast_with_proxy_hint(self) -> None:
+        listener = socket.create_server(("127.0.0.1", 0))
+        self.addCleanup(listener.close)
+        url = f"http://127.0.0.1:{listener.getsockname()[1]}"
+        env = {
+            "SAPCC_BASE_URL": url,
+            "SAPCC_INDEX_URL": f"{url}/",
+            "SAPCC_UPDATE_CONFIG": os.devnull,
+            "SAPCC_TIMEOUT": "0.5",
+            "NO_PROXY": "127.0.0.1",
+            "no_proxy": "127.0.0.1",
+        }
+        proxy_vars = ("https_proxy", "HTTPS_PROXY", "http_proxy", "HTTP_PROXY")
+        err = io.StringIO()
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            mock.patch.dict(os.environ, env),
+            contextlib.redirect_stderr(err),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            for var in proxy_vars:
+                os.environ.pop(var, None)
+            logging_handlers = list(su.logging.root.handlers)
+            for handler in logging_handlers:
+                su.logging.root.removeHandler(handler)
+            try:
+                rc = su.main(["-d", tmp, "--dry-run"])
+            finally:
+                for handler in list(su.logging.root.handlers):
+                    su.logging.root.removeHandler(handler)
+                for handler in logging_handlers:
+                    su.logging.root.addHandler(handler)
+        self.assertEqual(rc, su.Exit.FAILURE)
+        self.assertIn("cannot reach", err.getvalue())
+        self.assertIn("https_proxy", err.getvalue())
+        self.assertNotIn("probing", err.getvalue())
 
 
 if __name__ == "__main__":
