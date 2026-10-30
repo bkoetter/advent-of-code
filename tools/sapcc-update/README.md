@@ -2,43 +2,55 @@
 
 Downloads the newest SAP Cloud Connector for Linux x64
 (`https://tools.hana.ondemand.com/additional/sapcc-<version>-linux-x64.zip`)
-and extracts it — but only if the version is newer than the last one processed.
+and extracts it, but only if that version is newer than the last one processed.
+
+Single-file Python 3.15 script, stdlib only.
 
 ## How it works
 
-1. Reads the download page `https://tools.hana.ondemand.com/` and picks the
-   highest `sapcc-<version>-linux-x64.zip` link.
-2. Fallback if the page can't be parsed: probes the next patch/minor/major
+1. Reads `https://tools.hana.ondemand.com/` and picks the highest
+   `sapcc-<version>-linux-x64.zip` link.
+2. Fallback if the page yields nothing: probes the next patch, minor and major
    version with HEAD requests (e.g. `2.19.3`, `2.20.0`, `3.0.0`).
-3. Compares with `<base>/.version` (`sort -V`); exits 0 if nothing new.
-4. Downloads with the SAP EULA cookie into a temp file, tests the ZIP,
-   extracts into `<base>/releases/<version>`, points `<base>/current` at it
-   and keeps the last 3 releases (`-k`).
+3. Compares with `<base>/.version`; exits 0 if nothing is newer.
+4. Downloads with the SAP EULA cookie into a temp file, checks size and ZIP
+   integrity, rejects unsafe paths/symlinks, extracts into
+   `<base>/releases/<version>`, points `<base>/current` at it and keeps the
+   newest 3 releases (`--keep`).
 
-Uses `flock` so overlapping runs exit with code 3.
+Only one instance runs at a time (`flock` on `<base>/.lock`).
+See `sapcc-update --help` for options, exit codes and environment variables.
 
 ## Installation (SLES / openSUSE)
 
+Requires the managed interpreter at `/opt/python/current/bin/python3.15`
+(the shebang). Adjust the shebang if yours lives elsewhere.
+
 ```bash
-sudo zypper install curl unzip util-linux
-sudo install -m 0755 sapcc-update.sh /usr/local/sbin/
+sudo install -m 0755 sapcc-update.py /usr/local/sbin/sapcc-update
+sudo install -d -m 0755 /opt/sapcc-download /etc/sapcc-update
+sudo install -m 0644 sapcc-update.toml.example /etc/sapcc-update/sapcc-update.toml
 sudo install -m 0644 sapcc-update.service sapcc-update.timer /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now sapcc-update.timer
 ```
 
-Test first: `sudo /usr/local/sbin/sapcc-update.sh -n`
+`/opt/sapcc-download` must exist before the service starts, because the unit
+uses `ProtectSystem=strict` with `ReadWritePaths=`. If you change `base_dir`,
+change `ReadWritePaths=` too.
 
+Test first: `sudo sapcc-update --dry-run -v`
 Logs: `journalctl -u sapcc-update.service`
 
-Cron alternative:
+## Development
 
-```
-15 3 * * * /usr/local/sbin/sapcc-update.sh -q
+```bash
+python3.15 -m unittest discover -s tests -v
+ruff check . && ruff format --check . && mypy sapcc-update.py tests
 ```
 
 ## Notes
 
 - Downloading means you accept the SAP Developer License; the cookie is
-  configurable via `SAPCC_EULA_COOKIE` should SAP bump the license version.
+  configurable (`eula_cookie` / `SAPCC_EULA_COOKIE`) should SAP change it.
 - The ZIP contains the installer RPM; the script does not install it.

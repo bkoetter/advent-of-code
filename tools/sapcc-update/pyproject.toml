@@ -1,0 +1,66 @@
+# Paste into the project's pyproject.toml. Dev-only tooling: these are not
+# runtime dependencies and do not count against the stdlib-first policy.
+
+[tool.ruff]
+line-length = 88
+target-version = "py315"
+
+[tool.ruff.lint]
+select = [
+    "E", "W",    # pycodestyle — PEP 8
+    "F",         # pyflakes
+    "I",         # import sorting
+    "D",         # pydocstyle — PEP 257
+    "UP",        # pyupgrade — flag pre-3.15 idioms
+    "ANN",       # missing annotations
+    "S",         # bandit — security (subprocess, shell, tempfile, asserts)
+    "B",         # bugbear — mutable defaults, silent excepts
+    "A",         # builtin shadowing
+    "C4",        # comprehension rewrites
+    "DTZ",       # naive datetimes
+    "EM",        # exception messages built inline
+    "ISC",       # implicit string concat
+    "PTH",       # os.path where pathlib belongs
+    "RET",       # return-path simplification
+    "SIM",       # simplifiable constructs
+    "TRY",       # exception anti-patterns (bare raise, long try bodies)
+    "PL",        # pylint subset
+    "RUF",       # ruff-specific
+]
+ignore = [
+    "D203",      # conflicts with D211
+    "D213",      # conflicts with D212
+    "COM812",    # handled by the formatter
+    "E402",      # imports follow the interpreter version guard on purpose
+    "EM101", "EM102", "TRY003",  # inline messages for the Error hierarchy
+    "TRY300", "TRY301",          # explicit try/except flow is clearer here
+    "TRY400",    # expected errors are logged without a traceback
+    "S310",      # URL schemes are validated in checked_url()
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.ruff.lint.per-file-ignores]
+# Tests may use assert and skip docstrings on individual test methods.
+"tests/**" = ["S101", "D102", "D103", "PLR2004", "PLC2701", "SLF001"]
+
+[tool.ruff.format]
+line-ending = "lf"
+
+[tool.mypy]
+python_version = "3.15"
+strict = true
+warn_unreachable = true
+warn_return_any = true
+disallow_any_explicit = false      # tighten once the codebase is clean
+enable_error_code = [
+    "redundant-expr",
+    "truthy-bool",
+    "ignore-without-code",
+    "possibly-undefined",
+]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false

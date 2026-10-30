@@ -5,8 +5,14 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/sbin/sapcc-update.sh -q
-# Exit code 3 = another instance already running, not a failure
-SuccessExitStatus=3
+# The script's shebang points at /opt/python/current/bin/python3.15
+ExecStart=/usr/local/sbin/sapcc-update
 Nice=10
 IOSchedulingClass=idle
+# Hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/sapcc-download
+CapabilityBoundingSet=

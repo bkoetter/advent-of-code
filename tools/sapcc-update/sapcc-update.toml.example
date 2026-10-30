@@ -1,0 +1,10 @@
+# /etc/sapcc-update/sapcc-update.toml - all keys optional.
+# Precedence: command line > environment (SAPCC_<KEY>) > this file > defaults.
+
+# base_dir = "/opt/sapcc-download"
+# keep = 3
+# timeout = 60
+# start_version = "2.19.2"
+# eula_cookie = "eula_3_2_agreed=tools.hana.ondemand.com/developer-license-3_2.txt"
+# index_url = "https://tools.hana.ondemand.com/"
+# base_url = "https://tools.hana.ondemand.com"
