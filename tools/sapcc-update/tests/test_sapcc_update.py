@@ -146,19 +146,41 @@ class ExtractTest(unittest.TestCase):
             self.assertFalse(Path(tmp, "escape.txt").exists())
 
 
+def licence_js(name: str, value: str) -> str:
+    """Return the page JavaScript that defines the Cloud Connector licence."""
+    return (
+        f"eulaConst.cloudConnectorLicense.cookieName = '{name}'\n"
+        f"eulaConst.cloudConnectorLicense.cookieValue = '{value}'\n"
+    )
+
+
 class LicenceTest(unittest.TestCase):
     """Licence cookie detection and the not-a-ZIP diagnosis."""
 
-    def test_cookie_format(self) -> None:
+    def test_cookie_from_page(self) -> None:
         self.assertEqual(
-            su.eula_cookie((3, 2)),
-            "eula_3_2_agreed=tools.hana.ondemand.com/developer-license-3_2.txt",
+            su.eula_cookie_on_page(licence_js("x_agreed", "a/b-1.2.txt")),
+            "x_agreed=a/b-1.2.txt",
         )
 
-    def test_newest_licence_on_page(self) -> None:
-        page = "developer-license-3_2.txt developer-license-3_10.txt"
-        self.assertEqual(su.license_on_page(page), (3, 10))
-        self.assertIsNone(su.license_on_page("nothing"))
+    def test_ignores_other_licences(self) -> None:
+        page = "eulaConst.devLicense.cookieName = 'eula_3_2_agreed'"
+        self.assertIsNone(su.eula_cookie_on_page(page))
+
+    def test_rejects_unsafe_characters(self) -> None:
+        self.assertIsNone(su.eula_cookie_on_page(licence_js("a;b", "c")))
+
+    def test_real_page_snippet(self) -> None:
+        page = (
+            "eulaConst.devLicense.cookieName = 'eula_3_2_agreed'\n"
+            "eulaConst.devLicense.cookieValue = "
+            "'tools.hana.ondemand.com/developer-license-3_2.txt'\n"
+            "eulaConst.cloudConnectorLicense.cookieName = "
+            "'eula_cloud_connector_license_v1_2026_agreed'\n"
+            "eulaConst.cloudConnectorLicense.cookieValue = "
+            "'tools.hana.ondemand.com/cloud-connector-agreement_v1.2026.txt'\n"
+        )
+        self.assertEqual(su.eula_cookie_on_page(page), su.FALLBACK_EULA_COOKIE)
 
     def test_not_a_zip_message(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -326,17 +348,16 @@ class EndToEndTest(unittest.TestCase):
     def test_licence_cookie_taken_from_page(self) -> None:
         self.publish("2.19.2")
         with (self.www / "index.html").open("a", encoding="utf-8") as fh:
-            fh.write('<a href="developer-license-3_1.txt">old</a>\n')
-            fh.write('<a href="developer-license-3_3.txt">licence</a>\n')
-        self.server.required_cookie = su.eula_cookie((3, 3))  # type: ignore[attr-defined]
+            fh.write(licence_js("eula_cc_v9_agreed", "example/cc-v9.txt"))
+        self.server.required_cookie = "eula_cc_v9_agreed=example/cc-v9.txt"  # type: ignore[attr-defined]
         rc, res = self.run_json()
         self.assertEqual((rc, res["status"]), (0, "updated"))
 
     def test_explicit_cookie_overrides_page(self) -> None:
         self.publish("2.19.2")
         with (self.www / "index.html").open("a", encoding="utf-8") as fh:
-            fh.write('<a href="developer-license-3_3.txt">licence</a>\n')
-        self.server.required_cookie = su.eula_cookie((3, 3))  # type: ignore[attr-defined]
+            fh.write(licence_js("eula_cc_v9_agreed", "example/cc-v9.txt"))
+        self.server.required_cookie = "eula_cc_v9_agreed=example/cc-v9.txt"  # type: ignore[attr-defined]
         with mock.patch.dict(os.environ, {"SAPCC_EULA_COOKIE": "wrong=1"}):
             rc, _ = self.run_json()
         self.assertEqual(rc, su.Exit.FAILURE)
@@ -345,11 +366,11 @@ class EndToEndTest(unittest.TestCase):
 
     def test_success_removes_saved_failure(self) -> None:
         self.publish("2.19.2")
-        self.server.required_cookie = su.eula_cookie((3, 3))  # type: ignore[attr-defined]
+        self.server.required_cookie = "eula_cc_v9_agreed=example/cc-v9.txt"  # type: ignore[attr-defined]
         rc, _ = self.run_json()
         self.assertEqual(rc, su.Exit.FAILURE)
         with (self.www / "index.html").open("a", encoding="utf-8") as fh:
-            fh.write('<a href="developer-license-3_3.txt">licence</a>\n')
+            fh.write(licence_js("eula_cc_v9_agreed", "example/cc-v9.txt"))
         rc, _ = self.run_json()
         self.assertEqual(rc, su.Exit.OK)
         self.assertFalse((self.base / "downloads" / su.LAST_RESPONSE).exists())

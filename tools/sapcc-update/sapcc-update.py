@@ -75,10 +75,17 @@ DEFAULTS: Final[Mapping[str, str]] = {
 ENV_VARS: Final[Mapping[str, str]] = {key: f"SAPCC_{key.upper()}" for key in DEFAULTS}
 
 ARCHIVE_RE: Final = re.compile(r"sapcc-(\d+(?:\.\d+)+)-linux-x64\.zip")
-# Download links only work with a cookie confirming the SAP Developer License
-# that the page currently links to, e.g. developer-license-3_2.txt.
-LICENSE_RE: Final = re.compile(r"developer-license-(\d+)_(\d+)\.txt")
-FALLBACK_LICENSE: Final = (3, 2)
+# sapcc downloads only work with a cookie confirming the Cloud Connector
+# licence. The page's JavaScript defines it as
+#   eulaConst.cloudConnectorLicense.cookieName = '...'
+#   eulaConst.cloudConnectorLicense.cookieValue = '...'
+# and the name carries the licence year, so read it from there.
+LICENSE_KEY: Final = "cloudConnectorLicense"
+COOKIE_PART_RE: Final = r"\s*=\s*['\"]([A-Za-z0-9_.\-/]+)['\"]"
+FALLBACK_EULA_COOKIE: Final = (
+    "eula_cloud_connector_license_v1_2026_agreed="
+    "tools.hana.ondemand.com/cloud-connector-agreement_v1.2026.txt"
+)
 LAST_RESPONSE: Final = "last-failed-response.html"
 MAX_INDEX_BYTES: Final = 16 * 1024 * 1024
 MAX_UNPACKED_BYTES: Final = 4 * 1024**3
@@ -421,16 +428,15 @@ def https_proxy() -> str | None:
     return f"{parts.hostname}:{parts.port}" if parts.port else parts.hostname
 
 
-def eula_cookie(license_version: tuple[int, int]) -> str:
-    """Return the cookie that confirms acceptance of *license_version*."""
-    tag = "{}_{}".format(*license_version)
-    return f"eula_{tag}_agreed=tools.hana.ondemand.com/developer-license-{tag}.txt"
-
-
-def license_on_page(page: str) -> tuple[int, int] | None:
-    """Return the newest developer licence version linked on *page*, if any."""
-    found = {(int(a), int(b)) for a, b in LICENSE_RE.findall(page)}
-    return max(found, default=None)
+def eula_cookie_on_page(page: str) -> str | None:
+    """Return the Cloud Connector licence cookie defined on *page*, if any."""
+    parts = []
+    for attr in ("cookieName", "cookieValue"):
+        pattern = re.escape(f"{LICENSE_KEY}.{attr}") + COOKIE_PART_RE
+        if (found := re.search(pattern, page)) is None:
+            return None
+        parts.append(found.group(1))
+    return "=".join(parts)
 
 
 def read_index(opts: Options) -> str | None:
@@ -671,10 +677,10 @@ def run(opts: Options) -> dict[str, str | None]:
     page = read_index(opts) or ""
     latest = max((Version.parse(v) for v in ARCHIVE_RE.findall(page)), default=None)
     if opts.eula_cookie == "auto":
-        if (license_version := license_on_page(page)) is None:
-            log.info("no licence link on download page, assuming the default")
-            license_version = FALLBACK_LICENSE
-        opts = dataclasses.replace(opts, eula_cookie=eula_cookie(license_version))
+        if (cookie := eula_cookie_on_page(page)) is None:
+            log.warning("no licence cookie on download page, using built-in one")
+            cookie = FALLBACK_EULA_COOKIE
+        opts = dataclasses.replace(opts, eula_cookie=cookie)
     log.info("licence cookie: %s", opts.eula_cookie)
     if latest is not None:
         log.info("latest version on download page: %s", latest)

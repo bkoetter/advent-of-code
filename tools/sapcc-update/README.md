@@ -83,11 +83,13 @@ ruff check . && ruff format --check . && mypy sapcc-update.py tests
 
 ## Notes
 
-- Downloading means you accept the SAP Developer License. SAP only hands
-  out the ZIP if the request carries a cookie naming the current licence
-  version. By default (`eula_cookie = "auto"`) the script reads that version
-  from the `developer-license-X_Y.txt` link on the download page, falling
-  back to 3.2. Set `eula_cookie` / `SAPCC_EULA_COOKIE` to override it.
+- Downloading means you accept the SAP Cloud Connector licence. SAP only
+  hands out the ZIP if the request carries the cookie for the current version
+  of that licence (its name contains the year, e.g.
+  `eula_cloud_connector_license_v1_2026_agreed`). By default
+  (`eula_cookie = "auto"`) the script reads the cookie from the download
+  page's `eulaConst.cloudConnectorLicense` definition, falling back to the
+  2026 one. Set `eula_cookie` / `SAPCC_EULA_COOKIE` to override it.
 - If SAP or the proxy answers with something other than a ZIP, the error
   shows the content type, any redirect and the page title, and the response
   is kept as `<base>/downloads/last-failed-response.html` (mode 0600).
