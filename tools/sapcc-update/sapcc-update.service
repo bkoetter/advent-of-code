@@ -1,0 +1,12 @@
+[Unit]
+Description=Download latest SAP Cloud Connector if a newer version exists
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/sapcc-update.sh -q
+# Exit code 3 = another instance already running, not a failure
+SuccessExitStatus=3
+Nice=10
+IOSchedulingClass=idle
