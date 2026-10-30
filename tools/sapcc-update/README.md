@@ -83,6 +83,12 @@ ruff check . && ruff format --check . && mypy sapcc-update.py tests
 
 ## Notes
 
-- Downloading means you accept the SAP Developer License; the cookie is
-  configurable (`eula_cookie` / `SAPCC_EULA_COOKIE`) should SAP change it.
+- Downloading means you accept the SAP Developer License. SAP only hands
+  out the ZIP if the request carries a cookie naming the current licence
+  version. By default (`eula_cookie = "auto"`) the script reads that version
+  from the `developer-license-X_Y.txt` link on the download page, falling
+  back to 3.2. Set `eula_cookie` / `SAPCC_EULA_COOKIE` to override it.
+- If SAP or the proxy answers with something other than a ZIP, the error
+  shows the content type, any redirect and the page title, and the response
+  is kept as `<base>/downloads/last-failed-response.html` (mode 0600).
 - The ZIP contains the installer RPM; the script does not install it.

@@ -5,6 +5,8 @@
 # keep = 3
 # timeout = 60
 # start_version = "2.19.2"
+# "auto" reads the licence version from the download page; or set it, e.g.
 # eula_cookie = "eula_3_2_agreed=tools.hana.ondemand.com/developer-license-3_2.txt"
+# eula_cookie = "auto"
 # index_url = "https://tools.hana.ondemand.com/"
 # base_url = "https://tools.hana.ondemand.com"

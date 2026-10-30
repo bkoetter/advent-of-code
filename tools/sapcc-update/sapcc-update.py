@@ -28,6 +28,7 @@ if sys.version_info < MIN_PYTHON:
     )
 
 import argparse
+import dataclasses
 import errno
 import fcntl
 import http.client
@@ -65,10 +66,8 @@ DEFAULTS: Final[Mapping[str, str]] = {
     "keep": "3",
     "base_url": "https://tools.hana.ondemand.com",
     "index_url": "https://tools.hana.ondemand.com/",
-    # Download links only work with the accepted SAP Developer License cookie.
-    "eula_cookie": (
-        "eula_3_2_agreed=tools.hana.ondemand.com/developer-license-3_2.txt"
-    ),
+    # "auto": derive the licence cookie from the download page.
+    "eula_cookie": "auto",
     "start_version": "2.19.2",
     "timeout": "60",
 }
@@ -76,6 +75,11 @@ DEFAULTS: Final[Mapping[str, str]] = {
 ENV_VARS: Final[Mapping[str, str]] = {key: f"SAPCC_{key.upper()}" for key in DEFAULTS}
 
 ARCHIVE_RE: Final = re.compile(r"sapcc-(\d+(?:\.\d+)+)-linux-x64\.zip")
+# Download links only work with a cookie confirming the SAP Developer License
+# that the page currently links to, e.g. developer-license-3_2.txt.
+LICENSE_RE: Final = re.compile(r"developer-license-(\d+)_(\d+)\.txt")
+FALLBACK_LICENSE: Final = (3, 2)
+LAST_RESPONSE: Final = "last-failed-response.html"
 MAX_INDEX_BYTES: Final = 16 * 1024 * 1024
 MAX_UNPACKED_BYTES: Final = 4 * 1024**3
 DOWNLOAD_ATTEMPTS: Final = 3
@@ -417,8 +421,20 @@ def https_proxy() -> str | None:
     return f"{parts.hostname}:{parts.port}" if parts.port else parts.hostname
 
 
-def latest_from_index(opts: Options) -> Version | None:
-    """Return the highest version linked on the download page, if any.
+def eula_cookie(license_version: tuple[int, int]) -> str:
+    """Return the cookie that confirms acceptance of *license_version*."""
+    tag = "{}_{}".format(*license_version)
+    return f"eula_{tag}_agreed=tools.hana.ondemand.com/developer-license-{tag}.txt"
+
+
+def license_on_page(page: str) -> tuple[int, int] | None:
+    """Return the newest developer licence version linked on *page*, if any."""
+    found = {(int(a), int(b)) for a, b in LICENSE_RE.findall(page)}
+    return max(found, default=None)
+
+
+def read_index(opts: Options) -> str | None:
+    """Return the download page, or None if the server answers with an error.
 
     An HTTP error answer returns None so that probing can take over; a
     network failure raises, since probing the same host would fail too.
@@ -436,8 +452,7 @@ def latest_from_index(opts: Options) -> Version | None:
         if https_proxy() is None:
             msg += " (no proxy configured; set https_proxy if this host needs one)"
         raise Error(msg) from exc
-    versions = {Version.parse(m) for m in ARCHIVE_RE.findall(page)}
-    return max(versions, default=None)
+    return page
 
 
 def archive_exists(opts: Options, version: Version) -> bool:
@@ -523,6 +538,8 @@ def download(opts: Options, url: str, target: Path) -> None:
         try:
             with os.fdopen(fd, "wb") as out, open_url(opts, url) as response:
                 expected = response.headers.get("Content-Length")
+                content_type = response.headers.get_content_type()
+                final_url = response.geturl()
                 shutil.copyfileobj(response, out, CHUNK)
                 out.flush()
                 os.fsync(out.fileno())
@@ -530,9 +547,12 @@ def download(opts: Options, url: str, target: Path) -> None:
             if expected is not None and int(expected) != size:
                 raise OSError(f"incomplete download: {size} of {expected} bytes")
             if not zipfile.is_zipfile(tmp):
-                raise Error(f"{url} did not return a ZIP archive (EULA cookie?)")
+                saved = target.parent / LAST_RESPONSE
+                Path(tmp).replace(saved)
+                raise Error(not_a_zip(url, final_url, content_type, size, saved))
             Path(tmp).chmod(0o644)
             Path(tmp).replace(target)
+            (target.parent / LAST_RESPONSE).unlink(missing_ok=True)
             log.info("downloaded %s (%d bytes)", target.name, size)
             return
         except urllib.error.HTTPError as exc:
@@ -553,6 +573,28 @@ def download(opts: Options, url: str, target: Path) -> None:
             "attempt %d failed (%s), retrying in %.0fs", attempt, failure, delay
         )
         time.sleep(delay)
+
+
+def not_a_zip(
+    url: str, final_url: str, content_type: str, size: int, saved: Path
+) -> str:
+    """Describe a response that should have been a ZIP archive."""
+    head = saved.read_bytes()[:65536].decode("utf-8", errors="replace")
+    title = re.search(r"<title[^>]*>(.*?)</title>", head, re.IGNORECASE | re.DOTALL)
+    lines = [
+        f"{url} did not return a ZIP archive",
+        f"  received: {content_type}, {size} bytes",
+    ]
+    if final_url != url:
+        lines.append(f"  redirected to: {final_url}")
+    if title:
+        lines.append(f"  page title: {' '.join(title.group(1).split())[:120]}")
+    lines += [
+        f"  response saved as: {saved}",
+        "  likely causes: SAP did not accept the licence cookie (see eula_cookie),",
+        "  or the proxy blocked the download",
+    ]
+    return "\n".join(lines)
 
 
 def extract(archive: Path, target: Path) -> None:
@@ -626,7 +668,14 @@ def run(opts: Options) -> dict[str, str | None]:
                 raise Error(f"cannot create {directory}: {exc.strerror}") from exc
 
     installed = read_state(state_file)
-    latest = latest_from_index(opts)
+    page = read_index(opts) or ""
+    latest = max((Version.parse(v) for v in ARCHIVE_RE.findall(page)), default=None)
+    if opts.eula_cookie == "auto":
+        if (license_version := license_on_page(page)) is None:
+            log.info("no licence link on download page, assuming the default")
+            license_version = FALLBACK_LICENSE
+        opts = dataclasses.replace(opts, eula_cookie=eula_cookie(license_version))
+    log.info("licence cookie: %s", opts.eula_cookie)
     if latest is not None:
         log.info("latest version on download page: %s", latest)
     else:

@@ -34,11 +34,42 @@ def _load() -> ModuleType:
 su = _load()
 
 
+EULA_PAGE = b"<html><head><title>SAP Development Tools - EULA</title></head></html>"
+
+
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
-    """Static file handler that does not log to stderr."""
+    """Static file handler that mimics SAP's licence check on downloads.
+
+    If the server has a ``required_cookie`` attribute, archive requests
+    without exactly that Cookie header get the licence page, as SAP does.
+    """
 
     def log_message(self, format: str, *args: object) -> None:  # noqa: A002
         """Discard the access log."""
+
+    def _licence_page_instead(self) -> bool:
+        required = getattr(self.server, "required_cookie", None)
+        if not self.path.startswith("/additional/") or required is None:
+            return False
+        if self.headers.get("Cookie") == required:
+            return False
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html")
+        self.send_header("Content-Length", str(len(EULA_PAGE)))
+        self.end_headers()
+        if self.command == "GET":
+            self.wfile.write(EULA_PAGE)
+        return True
+
+    def do_GET(self) -> None:
+        """Serve the licence page or the requested file."""
+        if not self._licence_page_instead():
+            super().do_GET()
+
+    def do_HEAD(self) -> None:
+        """Serve the licence page headers or the requested file's."""
+        if not self._licence_page_instead():
+            super().do_HEAD()
 
 
 class VersionTest(unittest.TestCase):
@@ -113,6 +144,33 @@ class ExtractTest(unittest.TestCase):
                 su.extract(archive, releases / "1.0.0")
             self.assertEqual(list(releases.iterdir()), [])
             self.assertFalse(Path(tmp, "escape.txt").exists())
+
+
+class LicenceTest(unittest.TestCase):
+    """Licence cookie detection and the not-a-ZIP diagnosis."""
+
+    def test_cookie_format(self) -> None:
+        self.assertEqual(
+            su.eula_cookie((3, 2)),
+            "eula_3_2_agreed=tools.hana.ondemand.com/developer-license-3_2.txt",
+        )
+
+    def test_newest_licence_on_page(self) -> None:
+        page = "developer-license-3_2.txt developer-license-3_10.txt"
+        self.assertEqual(su.license_on_page(page), (3, 10))
+        self.assertIsNone(su.license_on_page("nothing"))
+
+    def test_not_a_zip_message(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            saved = Path(tmp, "r.html")
+            saved.write_bytes(EULA_PAGE)
+            msg = su.not_a_zip(
+                "https://a/x.zip", "https://a/eula", "text/html", 9, saved
+            )
+        self.assertIn("text/html, 9 bytes", msg)
+        self.assertIn("redirected to: https://a/eula", msg)
+        self.assertIn("page title: SAP Development Tools - EULA", msg)
+        self.assertIn(str(saved), msg)
 
 
 class BaseDirTest(unittest.TestCase):
@@ -261,7 +319,40 @@ class EndToEndTest(unittest.TestCase):
         rc, _ = self.run_json()
         self.assertEqual(rc, su.Exit.FAILURE)
         self.assertFalse((self.base / ".version").exists())
-        self.assertEqual(list((self.base / "downloads").iterdir()), [])
+        saved = self.base / "downloads" / su.LAST_RESPONSE
+        self.assertEqual(list((self.base / "downloads").iterdir()), [saved])
+        self.assertEqual(saved.stat().st_mode & 0o777, 0o600)
+
+    def test_licence_cookie_taken_from_page(self) -> None:
+        self.publish("2.19.2")
+        with (self.www / "index.html").open("a", encoding="utf-8") as fh:
+            fh.write('<a href="developer-license-3_1.txt">old</a>\n')
+            fh.write('<a href="developer-license-3_3.txt">licence</a>\n')
+        self.server.required_cookie = su.eula_cookie((3, 3))  # type: ignore[attr-defined]
+        rc, res = self.run_json()
+        self.assertEqual((rc, res["status"]), (0, "updated"))
+
+    def test_explicit_cookie_overrides_page(self) -> None:
+        self.publish("2.19.2")
+        with (self.www / "index.html").open("a", encoding="utf-8") as fh:
+            fh.write('<a href="developer-license-3_3.txt">licence</a>\n')
+        self.server.required_cookie = su.eula_cookie((3, 3))  # type: ignore[attr-defined]
+        with mock.patch.dict(os.environ, {"SAPCC_EULA_COOKIE": "wrong=1"}):
+            rc, _ = self.run_json()
+        self.assertEqual(rc, su.Exit.FAILURE)
+        saved = self.base / "downloads" / su.LAST_RESPONSE
+        self.assertEqual(saved.read_bytes(), EULA_PAGE)
+
+    def test_success_removes_saved_failure(self) -> None:
+        self.publish("2.19.2")
+        self.server.required_cookie = su.eula_cookie((3, 3))  # type: ignore[attr-defined]
+        rc, _ = self.run_json()
+        self.assertEqual(rc, su.Exit.FAILURE)
+        with (self.www / "index.html").open("a", encoding="utf-8") as fh:
+            fh.write('<a href="developer-license-3_3.txt">licence</a>\n')
+        rc, _ = self.run_json()
+        self.assertEqual(rc, su.Exit.OK)
+        self.assertFalse((self.base / "downloads" / su.LAST_RESPONSE).exists())
 
     def test_second_instance_fails(self) -> None:
         self.publish("2.19.2")
