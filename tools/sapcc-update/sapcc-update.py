@@ -61,7 +61,7 @@ PROG: Final = "sapcc-update"
 
 DEFAULT_CONFIG: Final = Path("/etc/sapcc-update/sapcc-update.toml")
 DEFAULTS: Final[Mapping[str, str]] = {
-    "base_dir": "/opt/sapcc-download",
+    "base_dir": "/tmp/sapcc-update",  # noqa: S108 - guarded by ensure_base_dir()
     "keep": "3",
     "base_url": "https://tools.hana.ondemand.com",
     "index_url": "https://tools.hana.ondemand.com/",
@@ -464,6 +464,33 @@ def latest_by_probing(opts: Options, start: Version) -> Version | None:
         current = base = found
 
 
+def ensure_base_dir(path: Path) -> None:
+    """Create *path* if needed and make sure nobody else controls it.
+
+    The default lives in world-writable /tmp, where another user could
+    pre-create the directory, or a symlink to one of our own directories, and
+    make us write into or extract to a place of their choosing.
+    """
+    try:
+        path.mkdir(mode=0o755, parents=True, exist_ok=True)
+    except OSError as exc:
+        msg = f"cannot create {path}: {exc.strerror}; choose another with --base-dir"
+        raise Error(msg) from exc
+    euid = os.geteuid()
+    link = path.lstat()
+    if stat.S_ISLNK(link.st_mode) and link.st_uid not in (euid, 0):
+        msg = f"{path} is a symlink owned by uid {link.st_uid}, refusing to use it"
+        raise Error(msg)
+    target = path.stat()
+    if not stat.S_ISDIR(target.st_mode):
+        raise Error(f"{path} is not a directory")
+    if target.st_uid != euid:
+        msg = f"{path} is owned by uid {target.st_uid}, not by you (uid {euid})"
+        raise Error(f"{msg}; choose another with --base-dir")
+    if target.st_mode & 0o022:
+        raise Error(f"{path} is writable by group or others, refusing to use it")
+
+
 def read_state(path: Path) -> Version | None:
     """Return the last processed version stored in *path*, if any."""
     try:
@@ -674,10 +701,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         lock = None
         if not opts.dry_run:
-            try:
-                opts.base_dir.mkdir(mode=0o755, parents=True, exist_ok=True)
-            except OSError as exc:
-                raise Error(f"cannot create {opts.base_dir}: {exc.strerror}") from exc
+            ensure_base_dir(opts.base_dir)
             lock = acquire_lock(opts.base_dir / ".lock")
         try:
             result = run(opts)

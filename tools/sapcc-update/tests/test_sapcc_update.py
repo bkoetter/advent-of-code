@@ -115,6 +115,53 @@ class ExtractTest(unittest.TestCase):
             self.assertFalse(Path(tmp, "escape.txt").exists())
 
 
+class BaseDirTest(unittest.TestCase):
+    """Ownership and permission checks on the base directory."""
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp)
+
+    def test_default_is_in_tmp(self) -> None:
+        self.assertEqual(su.DEFAULTS["base_dir"], "/tmp/sapcc-update")  # noqa: S108
+
+    def test_creates_missing_directory(self) -> None:
+        base = self.tmp / "a" / "b"
+        su.ensure_base_dir(base)
+        self.assertTrue(base.is_dir())
+
+    def test_rejects_world_writable(self) -> None:
+        base = self.tmp / "open"
+        base.mkdir()
+        base.chmod(0o777)
+        with self.assertRaisesRegex(su.Error, "writable by group or others"):
+            su.ensure_base_dir(base)
+
+    def test_rejects_foreign_owner(self) -> None:
+        with (
+            mock.patch.object(su.os, "geteuid", return_value=os.geteuid() + 1),
+            self.assertRaisesRegex(su.Error, "--base-dir"),
+        ):
+            su.ensure_base_dir(self.tmp)
+
+    def test_rejects_non_directory(self) -> None:
+        target = self.tmp / "file"
+        target.write_text("", encoding="utf-8")
+        with self.assertRaises(su.Error):
+            su.ensure_base_dir(target)
+
+    def test_permission_denied_suggests_base_dir(self) -> None:
+        with (
+            mock.patch.object(
+                Path, "mkdir", side_effect=PermissionError(13, "Permission denied")
+            ),
+            self.assertRaisesRegex(
+                su.Error, "Permission denied; choose another with --base-dir"
+            ),
+        ):
+            su.ensure_base_dir(self.tmp / "x")
+
+
 class EndToEndTest(unittest.TestCase):
     """Full runs against a local HTTP server mimicking the download page."""
 

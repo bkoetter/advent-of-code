@@ -1,7 +1,7 @@
 # /etc/sapcc-update/sapcc-update.toml - all keys optional.
 # Precedence: command line > environment (SAPCC_<KEY>) > this file > defaults.
 
-# base_dir = "/opt/sapcc-download"
+# base_dir = "/tmp/sapcc-update"
 # keep = 3
 # timeout = 60
 # start_version = "2.19.2"

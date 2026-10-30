@@ -11,8 +11,10 @@ Nice=10
 IOSchedulingClass=idle
 # Hardening
 NoNewPrivileges=yes
-PrivateTmp=yes
 ProtectSystem=strict
 ProtectHome=yes
-ReadWritePaths=/opt/sapcc-download
+# Default base dir is /tmp/sapcc-update. PrivateTmp= must stay off, or the
+# downloads would vanish when the service stops. To use another directory,
+# add --base-dir to ExecStart and change ReadWritePaths= to match.
+ReadWritePaths=/tmp
 CapabilityBoundingSet=

@@ -21,6 +21,20 @@ Single-file Python script (3.11 or newer), stdlib only.
 Only one instance runs at a time (`flock` on `<base>/.lock`).
 See `sapcc-update --help` for options, exit codes and environment variables.
 
+## Download location
+
+Default: `/tmp/sapcc-update`. Change it with, highest priority first:
+
+- `-d DIR` / `--base-dir DIR`
+- environment variable `SAPCC_BASE_DIR=DIR`
+- `base_dir = "DIR"` in `/etc/sapcc-update/sapcc-update.toml`
+
+The directory must be owned by the user running the script and must not be
+writable by group or others; otherwise the script refuses to use it. This
+matters in `/tmp`, where any user could create `/tmp/sapcc-update` first.
+Files in `/tmp` can be removed by a reboot or by `systemd-tmpfiles`
+cleanup; the script then just downloads the current version again.
+
 ## Installation (SLES / openSUSE)
 
 Requires Python 3.11 or newer. The shebang is `/usr/bin/python3.11`; on
@@ -35,16 +49,16 @@ Adjust the shebang if you use a different interpreter.
 
 ```bash
 sudo install -m 0755 sapcc-update.py /usr/local/sbin/sapcc-update
-sudo install -d -m 0755 /opt/sapcc-download /etc/sapcc-update
+sudo install -d -m 0755 /etc/sapcc-update
 sudo install -m 0644 sapcc-update.toml.example /etc/sapcc-update/sapcc-update.toml
 sudo install -m 0644 sapcc-update.service sapcc-update.timer /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now sapcc-update.timer
 ```
 
-`/opt/sapcc-download` must exist before the service starts, because the unit
-uses `ProtectSystem=strict` with `ReadWritePaths=`. If you change `base_dir`,
-change `ReadWritePaths=` too.
+The service uses `ProtectSystem=strict`, so only `ReadWritePaths=` is
+writable. If you change the base directory, change `ReadWritePaths=` too, and
+create the directory beforehand.
 
 Test first: `sudo sapcc-update --dry-run -v`
 Logs: `journalctl -u sapcc-update.service`
