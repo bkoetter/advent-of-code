@@ -1,4 +1,4 @@
-"""Tests for sapcc-update, run with: python3.15 -m unittest discover -s tests."""
+"""Tests for sapcc-update, run with: python3 -m unittest discover -s tests."""
 
 import contextlib
 import fcntl

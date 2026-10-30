@@ -4,7 +4,7 @@ Downloads the newest SAP Cloud Connector for Linux x64
 (`https://tools.hana.ondemand.com/additional/sapcc-<version>-linux-x64.zip`)
 and extracts it, but only if that version is newer than the last one processed.
 
-Single-file Python 3.15 script, stdlib only.
+Single-file Python script (3.11 or newer), stdlib only.
 
 ## How it works
 
@@ -23,8 +23,15 @@ See `sapcc-update --help` for options, exit codes and environment variables.
 
 ## Installation (SLES / openSUSE)
 
-Requires the managed interpreter at `/opt/python/current/bin/python3.15`
-(the shebang). Adjust the shebang if yours lives elsewhere.
+Requires Python 3.11 or newer. The shebang is `/usr/bin/python3.11`; on
+SLES 15 that comes from the Python 3 module:
+
+```bash
+sudo SUSEConnect -p sle-module-python3/15.7/x86_64
+sudo zypper install python311
+```
+
+Adjust the shebang if you use a different interpreter.
 
 ```bash
 sudo install -m 0755 sapcc-update.py /usr/local/sbin/sapcc-update
@@ -45,7 +52,7 @@ Logs: `journalctl -u sapcc-update.service`
 ## Development
 
 ```bash
-python3.15 -m unittest discover -s tests -v
+python3.11 -m unittest discover -s tests -v
 ruff check . && ruff format --check . && mypy sapcc-update.py tests
 ```
 

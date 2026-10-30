@@ -5,7 +5,7 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-# The script's shebang points at /opt/python/current/bin/python3.15
+# The script's shebang points at /usr/bin/python3.11
 ExecStart=/usr/local/sbin/sapcc-update
 Nice=10
 IOSchedulingClass=idle

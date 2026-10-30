@@ -1,4 +1,4 @@
-#!/opt/python/current/bin/python3.15
+#!/usr/bin/python3.11
 """sapcc-update - fetch the newest SAP Cloud Connector if a newer one exists.
 
 Looks up the newest ``sapcc-<version>-linux-x64.zip`` on
@@ -9,14 +9,14 @@ release. The archive contains the installer RPM; nothing is installed.
 """
 
 # /// script
-# requires-python = ">=3.15"
+# requires-python = ">=3.11"
 # dependencies = []
 # ///
 
 import sys
 from typing import Final
 
-MIN_PYTHON: Final = (3, 15)
+MIN_PYTHON: Final = (3, 11)
 
 # Kept ahead of all other code, and the file avoids newer-only syntax, so a
 # wrong interpreter fails with a sentence instead of a SyntaxError.
